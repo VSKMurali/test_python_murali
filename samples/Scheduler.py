@@ -3,6 +3,7 @@ from random import *
 import json
 import os.path
 
+
 def some_job():
     print("Decorated job")
     # Pick a user count from 0 to 1000
@@ -27,8 +28,8 @@ def some_job():
     print(json_data)
 
     # Save the JSON object in the log file
-    directory = 'D:/elk/logs_folder/'
-    file = os.path.join(directory, 'logs1.json')
+    directory = 'D:/logs_folder/'
+    file = os.path.join(directory, 'logs.json')
     print('file name ', file)
 
     save_file = open(file, "w")
@@ -39,7 +40,8 @@ def some_job():
 
     print('End')
 
+
 # Scheduling every 5 minutes
 scheduler = BlockingScheduler()
-scheduler.add_job(some_job, 'interval', minutes=5)
+scheduler.add_job(some_job, 'interval', minutes=1)
 scheduler.start()
