@@ -7,5 +7,7 @@ b = int(input())
 def add_numbers(a, b):
     sum = a + b
     print('Sum: ', sum)
+    return sum
 
-add_numbers(a,b)
+sum1 = add_numbers(a,b)
+print(sum1)
