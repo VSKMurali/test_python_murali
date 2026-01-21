@@ -12,7 +12,7 @@ class VideoToolkitApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Video Toolkit Pro")
-        self.root.geometry("900x700")
+        self.root.geometry("900x750")
         self.root.configure(bg="#1e1e2e")
 
         self.video_path = None
@@ -22,6 +22,7 @@ class VideoToolkitApp:
         self.duration = 0
         self.current_position = 0
         self.ffmpeg_path = None
+        self.merge_video_list = []
 
         # Try to find ffmpeg
         self.find_ffmpeg()
@@ -75,7 +76,8 @@ class VideoToolkitApp:
 
         # Left panel - Controls
         left_panel = tk.Frame(main_frame, bg="#2e3440", width=300)
-        left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 10))
+        left_panel.pack_propagate(False)
 
         # File selection
         file_frame = tk.LabelFrame(left_panel, text="Video File",
@@ -114,12 +116,34 @@ class VideoToolkitApp:
                                        font=("Arial", 10, "bold"))
         features_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
+        # Create a canvas with scrollbar for features
+        canvas = tk.Canvas(features_frame, bg="#2e3440", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(features_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#2e3440")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Enable mousewheel scrolling
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+
+        canvas.pack(side="left", fill="both", expand=True, padx=(5, 0))
+        scrollbar.pack(side="right", fill="y")
+
         # Frame extraction
-        extract_frame = tk.Frame(features_frame, bg="#2e3440")
-        extract_frame.pack(fill=tk.X, pady=10)
+        extract_frame = tk.Frame(scrollable_frame, bg="#2e3440")
+        extract_frame.pack(fill=tk.X, pady=10, padx=5)
 
         tk.Label(extract_frame, text="Extract Frame at (sec):",
-                 bg="#2e3440", fg="#d8dee9").pack()
+                 bg="#2e3440", fg="#d8dee9", font=("Arial", 9)).pack()
 
         self.second_entry = tk.Entry(extract_frame, bg="#3b4252",
                                      fg="#eceff4", justify=tk.CENTER)
@@ -140,8 +164,8 @@ class VideoToolkitApp:
                   font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=2)
 
         # Create GIF
-        gif_frame = tk.Frame(features_frame, bg="#2e3440")
-        gif_frame.pack(fill=tk.X, pady=10)
+        gif_frame = tk.Frame(scrollable_frame, bg="#2e3440")
+        gif_frame.pack(fill=tk.X, pady=10, padx=5)
 
         tk.Label(gif_frame, text="Create GIF:",
                  bg="#2e3440", fg="#d8dee9").pack()
@@ -169,8 +193,8 @@ class VideoToolkitApp:
                   font=("Arial", 9, "bold")).pack(pady=5)
 
         # Video clipping
-        clip_frame = tk.Frame(features_frame, bg="#2e3440")
-        clip_frame.pack(fill=tk.X, pady=10)
+        clip_frame = tk.Frame(scrollable_frame, bg="#2e3440")
+        clip_frame.pack(fill=tk.X, pady=10, padx=5)
 
         tk.Label(clip_frame, text="Clip Video:",
                  bg="#2e3440", fg="#d8dee9").pack()
@@ -207,17 +231,75 @@ class VideoToolkitApp:
                   bg="#bf616a", fg="white",
                   font=("Arial", 9, "bold")).pack(pady=5)
 
-        # Video stats
-        tk.Button(features_frame, text="Analyze Video Quality",
-                  command=self.analyze_quality,
-                  bg="#ebcb8b", fg="black",
+        # Extract Audio
+        audio_frame = tk.Frame(scrollable_frame, bg="#2e3440")
+        audio_frame.pack(fill=tk.X, pady=10, padx=5)
+
+        tk.Label(audio_frame, text="Extract Audio:",
+                 bg="#2e3440", fg="#d8dee9").pack()
+
+        audio_format_frame = tk.Frame(audio_frame, bg="#2e3440")
+        audio_format_frame.pack(pady=5)
+
+        tk.Label(audio_format_frame, text="Format:",
+                 bg="#2e3440", fg="#d8dee9").pack(side=tk.LEFT, padx=5)
+
+        self.audio_format_var = tk.StringVar(value="mp3")
+        audio_formats = ["mp3", "wav", "aac", "m4a"]
+        audio_dropdown = ttk.Combobox(audio_format_frame,
+                                      textvariable=self.audio_format_var,
+                                      values=audio_formats,
+                                      state="readonly",
+                                      width=8)
+        audio_dropdown.pack(side=tk.LEFT)
+
+        tk.Button(audio_frame, text="Extract Audio",
+                  command=self.extract_audio,
+                  bg="#8fbcbb", fg="white",
                   font=("Arial", 9, "bold")).pack(pady=5)
 
+        # Merge Videos
+        merge_frame = tk.Frame(scrollable_frame, bg="#2e3440")
+        merge_frame.pack(fill=tk.X, pady=10, padx=5)
+
+        tk.Label(merge_frame, text="Merge Videos:",
+                 bg="#2e3440", fg="#d8dee9").pack()
+
+        self.merge_count_label = tk.Label(merge_frame,
+                                          text="Videos: 0",
+                                          bg="#2e3440", fg="#88c0d0",
+                                          font=("Arial", 9))
+        self.merge_count_label.pack(pady=2)
+
+        merge_btn_frame = tk.Frame(merge_frame, bg="#2e3440")
+        merge_btn_frame.pack(pady=5)
+
+        tk.Button(merge_btn_frame, text="Add Videos",
+                  command=self.add_videos_to_merge,
+                  bg="#5e81ac", fg="white",
+                  font=("Arial", 8, "bold"), width=10).pack(side=tk.LEFT, padx=2)
+
+        tk.Button(merge_btn_frame, text="Clear List",
+                  command=self.clear_merge_list,
+                  bg="#4c566a", fg="white",
+                  font=("Arial", 8, "bold"), width=10).pack(side=tk.LEFT, padx=2)
+
+        tk.Button(merge_frame, text="Merge Videos",
+                  command=self.merge_videos,
+                  bg="#d08770", fg="white",
+                  font=("Arial", 9, "bold")).pack(pady=5)
+
+        # Video stats
+        tk.Button(scrollable_frame, text="Analyze Video Quality",
+                  command=self.analyze_quality,
+                  bg="#ebcb8b", fg="black",
+                  font=("Arial", 9, "bold")).pack(pady=5, padx=5)
+
         # FFmpeg path setting
-        tk.Button(features_frame, text="Set FFmpeg Path",
+        tk.Button(scrollable_frame, text="Set FFmpeg Path",
                   command=self.set_ffmpeg_path,
                   bg="#4c566a", fg="white",
-                  font=("Arial", 8)).pack(pady=5)
+                  font=("Arial", 8)).pack(pady=5, padx=5)
 
         # Right panel - Preview
         right_panel = tk.Frame(main_frame, bg="#2e3440")
@@ -590,6 +672,169 @@ class VideoToolkitApp:
             self.ffmpeg_path = file_path
             messagebox.showinfo("Success", f"FFmpeg path set to:\n{file_path}")
             self.status_label.config(text=f"FFmpeg: {Path(file_path).name}")
+
+    def extract_audio(self):
+        if not self.video_path:
+            messagebox.showwarning("No Video", "Please select a video first!")
+            return
+
+        if not self.ffmpeg_path:
+            response = messagebox.askyesno("FFmpeg Not Found",
+                                           "FFmpeg is not found automatically.\n\n"
+                                           "Do you want to manually select the FFmpeg executable?")
+            if response:
+                self.set_ffmpeg_path()
+            if not self.ffmpeg_path:
+                return
+
+        try:
+            audio_format = self.audio_format_var.get()
+
+            output_path = filedialog.asksaveasfilename(
+                defaultextension=f".{audio_format}",
+                filetypes=[
+                    (f"{audio_format.upper()}", f"*.{audio_format}"),
+                    ("All Files", "*.*")
+                ]
+            )
+
+            if not output_path:
+                return
+
+            self.status_label.config(text="Extracting audio... Please wait")
+            self.root.update()
+
+            # Build ffmpeg command for audio extraction
+            cmd = [
+                self.ffmpeg_path,
+                '-i', self.video_path,
+                '-vn',  # No video
+                '-acodec', 'libmp3lame' if audio_format == 'mp3' else 'copy',
+                '-q:a', '2',  # Quality
+                '-y', output_path
+            ]
+
+            result = subprocess.run(cmd,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    timeout=300)
+
+            if result.returncode == 0:
+                file_size = os.path.getsize(output_path) / (1024 * 1024)
+                self.status_label.config(
+                    text=f"Audio extracted: {Path(output_path).name}"
+                )
+                messagebox.showinfo("Success",
+                                    f"Audio extracted successfully!\n"
+                                    f"Format: {audio_format.upper()}\n"
+                                    f"Size: {file_size:.2f} MB")
+            else:
+                error_msg = result.stderr.decode('utf-8', errors='ignore')
+                messagebox.showerror("Error", f"Failed to extract audio:\n{error_msg[:300]}")
+                self.status_label.config(text="Error extracting audio")
+
+        except subprocess.TimeoutExpired:
+            messagebox.showerror("Timeout", "Audio extraction took too long.")
+            self.status_label.config(text="Extraction timeout")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+            self.status_label.config(text="Error")
+
+    def add_videos_to_merge(self):
+        file_paths = filedialog.askopenfilenames(
+            title="Select Videos to Merge",
+            filetypes=[("Video Files", "*.mp4 *.avi *.mov *.mkv"),
+                       ("All Files", "*.*")]
+        )
+
+        if file_paths:
+            self.merge_video_list.extend(file_paths)
+            self.merge_count_label.config(text=f"Videos: {len(self.merge_video_list)}")
+            self.status_label.config(text=f"Added {len(file_paths)} video(s) to merge list")
+
+    def clear_merge_list(self):
+        self.merge_video_list = []
+        self.merge_count_label.config(text="Videos: 0")
+        self.status_label.config(text="Merge list cleared")
+
+    def merge_videos(self):
+        if len(self.merge_video_list) < 2:
+            messagebox.showwarning("Not Enough Videos",
+                                   "Please add at least 2 videos to merge!")
+            return
+
+        if not self.ffmpeg_path:
+            response = messagebox.askyesno("FFmpeg Not Found",
+                                           "FFmpeg is not found automatically.\n\n"
+                                           "Do you want to manually select the FFmpeg executable?")
+            if response:
+                self.set_ffmpeg_path()
+            if not self.ffmpeg_path:
+                return
+
+        try:
+            output_path = filedialog.asksaveasfilename(
+                defaultextension=".mp4",
+                filetypes=[("MP4", "*.mp4"), ("AVI", "*.avi"), ("MKV", "*.mkv")]
+            )
+
+            if not output_path:
+                return
+
+            self.status_label.config(text=f"Merging {len(self.merge_video_list)} videos... Please wait")
+            self.root.update()
+
+            # Create a temporary file list for ffmpeg
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+                for video_path in self.merge_video_list:
+                    # Use absolute paths and escape special characters
+                    abs_path = os.path.abspath(video_path).replace('\\', '/')
+                    f.write(f"file '{abs_path}'\n")
+                temp_file = f.name
+
+            # Build ffmpeg command for merging
+            cmd = [
+                self.ffmpeg_path,
+                '-f', 'concat',
+                '-safe', '0',
+                '-i', temp_file,
+                '-c', 'copy',
+                '-y', output_path
+            ]
+
+            result = subprocess.run(cmd,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    timeout=600)  # 10 minute timeout
+
+            # Clean up temp file
+            try:
+                os.unlink(temp_file)
+            except:
+                pass
+
+            if result.returncode == 0:
+                file_size = os.path.getsize(output_path) / (1024 * 1024)
+                self.status_label.config(
+                    text=f"Videos merged: {Path(output_path).name}"
+                )
+                messagebox.showinfo("Success",
+                                    f"Videos merged successfully!\n"
+                                    f"Total videos: {len(self.merge_video_list)}\n"
+                                    f"Output size: {file_size:.2f} MB")
+                self.clear_merge_list()
+            else:
+                error_msg = result.stderr.decode('utf-8', errors='ignore')
+                messagebox.showerror("Error", f"Failed to merge videos:\n{error_msg[:300]}")
+                self.status_label.config(text="Error merging videos")
+
+        except subprocess.TimeoutExpired:
+            messagebox.showerror("Timeout", "Video merging took too long.")
+            self.status_label.config(text="Merging timeout")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+            self.status_label.config(text="Error")
 
     def analyze_quality(self):
         if not self.video_path:
