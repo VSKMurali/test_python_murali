@@ -118,7 +118,9 @@ class VideoToolkitApp:
 
         # Create a canvas with scrollbar for features
         canvas = tk.Canvas(features_frame, bg="#2e3440", highlightthickness=0)
-        scrollbar = ttk.Scrollbar(features_frame, orient="vertical", command=canvas.yview)
+        scrollbar = tk.Scrollbar(features_frame, orient="vertical", command=canvas.yview,
+                                 bg="#4c566a", troughcolor="#2e3440",
+                                 activebackground="#88c0d0", width=10)
         scrollable_frame = tk.Frame(canvas, bg="#2e3440")
 
         scrollable_frame.bind(
@@ -135,8 +137,8 @@ class VideoToolkitApp:
 
         canvas.bind_all("<MouseWheel>", on_mousewheel)
 
-        canvas.pack(side="left", fill="both", expand=True, padx=(5, 0))
         scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
 
         # Frame extraction
         extract_frame = tk.Frame(scrollable_frame, bg="#2e3440")
@@ -156,19 +158,19 @@ class VideoToolkitApp:
         tk.Button(btn_frame, text="Preview",
                   command=self.preview_frame,
                   bg="#81a1c1", fg="white",
-                  font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=2)
+                  font=("Arial", 8, "bold")).pack(side=tk.LEFT, padx=2)
 
         tk.Button(btn_frame, text="Extract Frame",
                   command=self.extract_frame,
                   bg="#a3be8c", fg="white",
-                  font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=2)
+                  font=("Arial", 8, "bold")).pack(side=tk.LEFT, padx=2)
 
         # Create GIF
         gif_frame = tk.Frame(scrollable_frame, bg="#2e3440")
         gif_frame.pack(fill=tk.X, pady=10, padx=5)
 
         tk.Label(gif_frame, text="Create GIF:",
-                 bg="#2e3440", fg="#d8dee9").pack()
+                 bg="#2e3440", fg="#d8dee9", font=("Arial", 9)).pack()
 
         time_frame = tk.Frame(gif_frame, bg="#2e3440")
         time_frame.pack()
@@ -190,14 +192,14 @@ class VideoToolkitApp:
         tk.Button(gif_frame, text="Create GIF",
                   command=self.create_gif,
                   bg="#b48ead", fg="white",
-                  font=("Arial", 9, "bold")).pack(pady=5)
+                  font=("Arial", 8, "bold")).pack(pady=3)
 
         # Video clipping
         clip_frame = tk.Frame(scrollable_frame, bg="#2e3440")
         clip_frame.pack(fill=tk.X, pady=10, padx=5)
 
         tk.Label(clip_frame, text="Clip Video:",
-                 bg="#2e3440", fg="#d8dee9").pack()
+                 bg="#2e3440", fg="#d8dee9", font=("Arial", 9)).pack()
 
         clip_time_frame = tk.Frame(clip_frame, bg="#2e3440")
         clip_time_frame.pack()
@@ -229,14 +231,14 @@ class VideoToolkitApp:
         tk.Button(clip_frame, text="Clip Video",
                   command=self.clip_video,
                   bg="#bf616a", fg="white",
-                  font=("Arial", 9, "bold")).pack(pady=5)
+                  font=("Arial", 8, "bold")).pack(pady=3)
 
         # Extract Audio
         audio_frame = tk.Frame(scrollable_frame, bg="#2e3440")
         audio_frame.pack(fill=tk.X, pady=10, padx=5)
 
         tk.Label(audio_frame, text="Extract Audio:",
-                 bg="#2e3440", fg="#d8dee9").pack()
+                 bg="#2e3440", fg="#d8dee9", font=("Arial", 9)).pack()
 
         audio_format_frame = tk.Frame(audio_frame, bg="#2e3440")
         audio_format_frame.pack(pady=5)
@@ -256,14 +258,14 @@ class VideoToolkitApp:
         tk.Button(audio_frame, text="Extract Audio",
                   command=self.extract_audio,
                   bg="#8fbcbb", fg="white",
-                  font=("Arial", 9, "bold")).pack(pady=5)
+                  font=("Arial", 8, "bold")).pack(pady=3)
 
         # Merge Videos
         merge_frame = tk.Frame(scrollable_frame, bg="#2e3440")
         merge_frame.pack(fill=tk.X, pady=10, padx=5)
 
         tk.Label(merge_frame, text="Merge Videos:",
-                 bg="#2e3440", fg="#d8dee9").pack()
+                 bg="#2e3440", fg="#d8dee9", font=("Arial", 9)).pack()
 
         self.merge_count_label = tk.Label(merge_frame,
                                           text="Videos: 0",
@@ -287,19 +289,19 @@ class VideoToolkitApp:
         tk.Button(merge_frame, text="Merge Videos",
                   command=self.merge_videos,
                   bg="#d08770", fg="white",
-                  font=("Arial", 9, "bold")).pack(pady=5)
+                  font=("Arial", 8, "bold")).pack(pady=3)
 
         # Video stats
         tk.Button(scrollable_frame, text="Analyze Video Quality",
                   command=self.analyze_quality,
                   bg="#ebcb8b", fg="black",
-                  font=("Arial", 9, "bold")).pack(pady=5, padx=5)
+                  font=("Arial", 8, "bold")).pack(pady=3, padx=5)
 
         # FFmpeg path setting
         tk.Button(scrollable_frame, text="Set FFmpeg Path",
                   command=self.set_ffmpeg_path,
                   bg="#4c566a", fg="white",
-                  font=("Arial", 8)).pack(pady=5, padx=5)
+                  font=("Arial", 7)).pack(pady=3, padx=5)
 
         # Right panel - Preview
         right_panel = tk.Frame(main_frame, bg="#2e3440")
